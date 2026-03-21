@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  # ── PostgreSQL ──
+  postgres:
+    image: postgres:15-alpine
+    container_name: amcart-auth-db
+    environment:
+      POSTGRES_DB: amcart_auth
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── Auth Backend (NestJS) ──
+  auth-api:
+    build: ./backend
+    container_name: amcart-auth-api
+    ports:
+      - '3001:3001'
+    environment:
+      PORT: 3001
+      NODE_ENV: development
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres123
+      DB_NAME: amcart_auth
+      FRONTEND_URL: http://localhost:3000
+      # Mount your Firebase service account key
+      FIREBASE_SERVICE_ACCOUNT_PATH: /app/firebase-service-account.json
+    volumes:
+      - ./backend/firebase-service-account.json:/app/firebase-service-account.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:
