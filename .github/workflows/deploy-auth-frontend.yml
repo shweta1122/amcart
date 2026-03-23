@@ -1,0 +1,48 @@
+name: Deploy Auth Frontend
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'amcart-auth-frontend/**'
+      - '.github/workflows/deploy-auth-frontend.yml'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./amcart-auth-frontend
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/amcart-frontend:latest
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.FRONTEND_EC2_HOST }}
+          username: ${{ secrets.FRONTEND_EC2_USER }}
+          key: ${{ secrets.FRONTEND_EC2_SSH_KEY }}
+          script: |
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/amcart-frontend:latest
+            docker stop amcart-auth-frontend || true
+            docker rm amcart-auth-frontend || true
+            docker run -d \
+              --name amcart-auth-frontend \
+              --restart unless-stopped \
+              -p 3000:3000 \
+              --env-file /home/ubuntu/amcart-auth-frontend.env \
+              ${{ secrets.DOCKERHUB_USERNAME }}/amcart-frontend:latest
+            docker image prune -f
