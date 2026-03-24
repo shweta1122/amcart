@@ -28,13 +28,25 @@ jobs:
           context: ./amcart-auth-frontend
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/amcart-frontend:latest
+          build-args: |
+            NEXT_PUBLIC_FIREBASE_API_KEY=${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+            NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+            NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+            NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+            NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+            NEXT_PUBLIC_FIREBASE_APP_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
+
+      - name: Setup SSH Key
+        run: |
+          echo "${{ secrets.FRONTEND_EC2_SSH_KEY }}" | base64 -d > /tmp/ec2_key
+          chmod 600 /tmp/ec2_key
 
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.FRONTEND_EC2_HOST }}
           username: ${{ secrets.FRONTEND_EC2_USER }}
-          key: ${{ secrets.FRONTEND_EC2_SSH_KEY }}
+          key_path: /tmp/ec2_key
           script: |
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/amcart-frontend:latest
             docker stop amcart-auth-frontend || true
@@ -43,6 +55,5 @@ jobs:
               --name amcart-auth-frontend \
               --restart unless-stopped \
               -p 3000:3000 \
-              --env-file /home/ubuntu/amcart-auth-frontend.env \
               ${{ secrets.DOCKERHUB_USERNAME }}/amcart-frontend:latest
             docker image prune -f
