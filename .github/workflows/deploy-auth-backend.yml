@@ -43,6 +43,6 @@ jobs:
               --name amcart-auth-backend \
               --restart unless-stopped \
               -p 3001:3001 \
-              --env-file /home/ubuntu/amcart-auth-backend.env \
+              --env-file /home/ec2-user/amcart-auth-backend.env \
               ${{ secrets.DOCKERHUB_USERNAME }}/amcart-backend:latest
             docker image prune -f
