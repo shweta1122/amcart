@@ -29,12 +29,17 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/amcart-backend:latest
 
+      - name: Setup SSH Key
+        run: |
+          echo "${{ secrets.BACKEND_EC2_SSH_KEY }}" | base64 -d > /tmp/ec2_key
+          chmod 600 /tmp/ec2_key
+
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.BACKEND_EC2_HOST }}
           username: ${{ secrets.BACKEND_EC2_USER }}
-          key: ${{ secrets.BACKEND_EC2_SSH_KEY }}
+          key_path: /tmp/ec2_key
           debug: true
           script: |
             echo "connected"
