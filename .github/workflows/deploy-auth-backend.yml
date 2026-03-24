@@ -35,14 +35,6 @@ jobs:
           host: ${{ secrets.BACKEND_EC2_HOST }}
           username: ${{ secrets.BACKEND_EC2_USER }}
           key: ${{ secrets.BACKEND_EC2_SSH_KEY }}
+          debug: true
           script: |
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/amcart-backend:latest
-            docker stop amcart-auth-backend || true
-            docker rm amcart-auth-backend || true
-            docker run -d \
-              --name amcart-auth-backend \
-              --restart unless-stopped \
-              -p 3001:3001 \
-              --env-file /home/ec2-user/amcart-auth-backend.env \
-              ${{ secrets.DOCKERHUB_USERNAME }}/amcart-backend:latest
-            docker image prune -f
+            echo "connected"
